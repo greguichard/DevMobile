@@ -1,0 +1,190 @@
+\documentclass{article}
+
+\usepackage{a4wide}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[babel=true]{csquotes} % guillemets français
+\usepackage{graphicx}
+\graphicspath{{Images/}}
+\usepackage{color}
+\usepackage{hyperref}
+\hypersetup{colorlinks,linkcolor=,urlcolor=blue}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+\title{Rapport CCTP Développement Mobile}
+\author{Grégory GUICHARD, L3 informatique}
+\date{\today}
+
+\begin{document}
+
+\maketitle % pour écrire le titre
+
+
+%% Le résumé:
+\begin{abstract}
+  Durant l'année de L3 informatique, les étudiants participent à une UE de développement mobile. Ils doivent programmer un jeu sur Android et iOS.
+\end{abstract}
+
+\section{INTRODUCTION}
+\label{section:hello} % pour faire référence à la section ailleurs (\ref{...} voir plus bas)
+
+Pour ce TP, il faut concevoir un jeu pour Android\cite{ref1} et iOS\cite{ref2} en respectant quelques contraintes:
+\begin{itemize}
+\item Un score doit être associé à chaque partie
+\item L'application doit posséder plusieurs écrans
+\begin{itemize}
+\item Un écran d'acceuil
+\item Un écran pour pourvoir enregistrer son score à la fin de la partie
+\item Un écran pour consulter les scores
+\end{itemize}
+\item Le joueur doit avoir la possibilité d'enregistrer et de supprimer son score de façon permanente
+\end{itemize}
+
+
+\section{Le jeu}
+
+Le joueur dispose d'une grille de 25 cases blanches réparties sur 5 lignes. Le but du jeu est de colorer toutes les cases en noir. Pour se faire, le joueur clique sur la case qu'il veut colorer mais il colore également les cases adjacentes (celle du haut, du bas, à gauche et à droite). Si la case à colorer est blanche, elle devient noire et inversement.
+
+\begin{center}
+  \includegraphics[scale=0.5]{exGrille.PNG}
+\end{center}
+
+
+
+
+\section{Interface}
+
+L'application possède 4 écrans pour Android et 3 écrans pour iOS
+
+\begin{itemize}
+\item Un écran d'acceuil permettant de commencer une nouvelle partie ou de voir les scores,
+\item Un écran où le joueur joue,
+\item Un écran permettant d'afficher et d'enregistrer son score à la fin d'une partie,
+\item Un écran permettant d'afficher tous les scores enregistrés.
+\end{itemize}
+
+\begin{center}
+  \includegraphics[scale=0.3]{ecrans.png}
+\end{center}
+
+\section{La grille}
+
+La grille est déssinée automatiquement par le code. Cela permet de dessiner des grilles de tailles différentes simplement en modifiant les nombre de colonnes et de lignes. On dessine d'abord le fond des cellules puis les lignes qui forment la grille. 
+
+La fonction onDraw\cite{ref3} pour dessiner la grille sur Android.
+
+\begin{verbatim}
+@Override
+    protected void onDraw(Canvas canvas) {
+
+        // --- On dessine les cellules ---
+        for( int y=0; y<5; y++ ) {
+            for( int x=0; x<5; x++ ) {
+
+                int backgroundColor = Color.WHITE;
+
+                // On change la couleur du fond si la valeur est à 1
+                if ( gameBoard.cells[y][x].Value==1 ) {
+                    backgroundColor = Color.BLACK;
+                }
+
+                // Draw the background for the current cell
+                paint.setColor( backgroundColor );
+                canvas.drawRect(x * cellWidth+marginGrid,y * cellWidth + 150 ,
+                    (x+1) * cellWidth+marginGrid,(y+1) * cellWidth + 150, paint);
+            }
+        }
+
+        // --- On dessine les lignes de la grille ---
+        paint.setColor( Color.BLACK );
+        paint.setStrokeWidth( gridSeparatorSize );
+        for( int i=0; i<=5; i++ ) {
+            canvas.drawLine( i*cellWidth+marginGrid, 150, 
+                i*cellWidth+marginGrid, 150+cellWidth*5, paint );
+            canvas.drawLine( marginGrid,150+i*cellWidth, 
+                cellWidth*5+marginGrid, 150+i*cellWidth, paint );
+        }
+    }
+\end{verbatim}
+
+La fonction onDraw() pour dessiner la grille sur iOS
+
+\begin{verbatim}
+    override func draw(_ rect: CGRect) {
+        
+        let context = UIGraphicsGetCurrentContext()
+        
+        let w = Int(rect.size.width)
+        let cellwidth = w/5
+        //Dessiner les cellules
+        
+        for x in 0..<5 {
+            for y in 0..<5 {
+                if (gb.getGameBoard()[x][y].value==0){
+                    context?.setFillColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+                } else {
+                    context?.setFillColor(red: 0, green: 0, blue: 0, alpha: 100)
+                }
+                let rectangle = CGRect(x: x*cellwidth, y: y*cellwidth, 
+                    width: cellwidth, height: cellwidth)
+                context?.fill(rectangle)
+            }
+        }
+        
+        //Dessiner les lignes
+        context?.setLineWidth(2)
+        UIColor.black.setStroke()
+        
+        for i in 0..<6 {
+            context?.move(to: CGPoint(x: i*cellwidth, y: 0))
+            context?.addLine(to: CGPoint(x: i*cellwidth, y: cellwidth*5))
+            context!.strokePath()
+            
+            context?.move(to: CGPoint(x: 0, y: i*cellwidth))
+            context?.addLine(to: CGPoint(x: cellwidth*5, y: i*cellwidth))
+            context!.strokePath()
+        }
+    }
+\end{verbatim}
+
+\section{La gestion des évènements}
+
+Lors de la partie, il suffit de toucher l'écran sur grille pour pourvoir colorer les cases.
+La gestion de cet évènement s'effectue grâce à : 
+
+
+\begin{itemize}
+\item gestureDetector et à sa fonction onSingleTapUp() pour Android
+\item UITouch et à sa fonction touchesBegan() pour iOS
+\end{itemize}
+
+
+\section{La persistance des données}
+
+La persistance des données n'est présente que sur Android. Elle est réalisé grâce à une sauvegarde dans une base de données relationnelle. La base de données possède une seule table "tableScore" composée de 4 champs:
+
+\begin{itemize}
+\item "idScore" pour reconnaitre chaque donnée  
+\item "nom" pour le nom du joueur
+\item "score" pour le score
+\item "date" pour la date à laquelle le score a été réalisé
+\end{itemize}
+
+La création et la modification de la base de données s'effectuent grâce à "SQLiteDataBase"\cite{ref4}
+
+\section{Conclusion}
+
+Pour ce TP, le programme sous Android fonctionne, le joueur peut lancer une partie, sauvegarder son score si il le souhaite, afficher les scores enregistrés et effacer les scores souhaités.
+Sous iOS, le joueur peut lancer une nouvelle partie et la terminer. Mais lors de l'affichage des scores, la variable n'est pas transmise à l'écran suivante. J'ai essayé de mettre en place une solution grâce à une fonction Delegate mais je n'ai pas réussi.
+
+
+
+%%% La bibliographie:
+\bibliographystyle{plain}
+\bibliography{ma_biblio}
+
+\end{document}
