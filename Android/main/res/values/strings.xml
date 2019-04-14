@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ProjetDevMobile</string>
+    <string name="newGame">Nouvelle partie</string>
+    <string name="retourMenu">Retour au menu</string>
+    <string name="score">Score</string>
+    <string name="sauvegarder">Sauvegarder</string>
+    <string name="menu_delete">Effacer</string>
+</resources>
